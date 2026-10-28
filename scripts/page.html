@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rekhta Downloader</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231b4332'/%3E%3Cpath fill='%23f4efe6' d='M8 7.5h11.2c1.8 0 3.3 1.5 3.3 3.3V25H11.2C9.4 25 8 23.6 8 21.8V7.5z'/%3E%3Cpath fill='%231b4332' d='M11 11.2h8.2v1.4H11zm0 3.2h8.2v1.4H11zm0 3.2h5.4v1.4H11z'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #1c1916;
+      --muted: #6d655c;
+      --paper: #ebe4d8;
+      --card: #fffcf8;
+      --line: #e4dcd0;
+      --green: #1b4332;
+      --green-soft: #e7f3ec;
+      --amber: #7a5410;
+      --amber-bg: #fbf6ec;
+      --clay: #8a3d32;
+      --clay-bg: #fdf6f4;
+      --track: #ece4d8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 50% -80px, #f8f3ea 0%, rgba(248, 243, 234, 0) 70%),
+        var(--paper);
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    main {
+      width: min(740px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-family: Palatino, "Palatino Linotype", Georgia, serif;
+      font-size: 44px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .lede {
+      max-width: 46ch;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+    .composer, .list-head, .job, .empty {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(48, 36, 16, 0.05);
+    }
+    .composer { margin-top: 28px; padding: 16px; }
+    #rows { display: flex; flex-direction: column; gap: 8px; }
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type="url"] {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border: 1px solid #ddd4c6;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    input[type="url"]:focus {
+      outline: 2px solid rgba(27, 67, 50, 0.28);
+      border-color: var(--green);
+    }
+    input::placeholder { color: #a3988b; }
+    button, .button {
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button:disabled { opacity: 0.45; cursor: default; }
+    .ghost {
+      background: #fff;
+      border-color: #ddd4c6;
+      color: var(--ink);
+    }
+    .ghost:hover:not(:disabled) { background: #faf7f2; }
+    .icon {
+      width: 40px;
+      padding: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1;
+    }
+    .icon:hover { color: var(--ink); background: #f3eee6; }
+    .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    #add {
+      height: 40px;
+      padding: 0 4px;
+      background: transparent;
+      color: var(--green);
+    }
+    #add:hover:not(:disabled) { color: #123526; }
+    #all {
+      background: var(--green);
+      color: white;
+      padding: 0 18px;
+    }
+    #all:hover:not(:disabled) { background: #143728; }
+    .list-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin: 22px 0 10px;
+      padding: 0 4px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    h2 { margin: 0; font-size: 15px; font-weight: 650; }
+    #summary { margin: 0; color: var(--muted); font-size: 14px; }
+    .empty {
+      padding: 28px 22px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty strong { display: block; margin-bottom: 4px; color: var(--ink); font-weight: 650; }
+    #jobs { display: flex; flex-direction: column; gap: 10px; }
+    .job { padding: 16px 16px 14px; }
+    .job.done { background: #f4faf6; border-color: #d3e7db; }
+    .job.error { background: var(--clay-bg); border-color: #f0ddd8; }
+    .job-top, .status-row, .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+    .percent {
+      flex: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    .url {
+      margin: 3px 0 0;
+      color: #8a8176;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .track {
+      height: 8px;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--track);
+    }
+    .fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: var(--green);
+      transition: width 0.35s ease;
+    }
+    .fill.indeterminate {
+      width: 40%;
+      transition: none;
+      animation: slide 1.15s ease-in-out infinite alternate;
+    }
+    .job.retrying .fill { background: #c4841d; }
+    @keyframes slide {
+      from { transform: translateX(0); }
+      to { transform: translateX(150%); }
+    }
+    .status-row { justify-content: flex-start; margin-top: 10px; color: var(--muted); font-size: 14px; }
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(27, 67, 50, 0.45);
+      animation: pulse 1.6s ease-out infinite;
+      flex: none;
+    }
+    .job.retrying .dot { background: #c4841d; }
+    @keyframes pulse {
+      70% { box-shadow: 0 0 0 7px rgba(27, 67, 50, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(27, 67, 50, 0); }
+    }
+    .notice {
+      margin: 10px 0 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--amber-bg);
+      color: var(--amber);
+      font-size: 14px;
+    }
+    .notice.calm {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+    .notice .count {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+    .error-text { margin: 8px 0 0; color: var(--clay); font-size: 14px; }
+    .check {
+      width: 22px;
+      height: 22px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      animation: pop 0.35s ease;
+    }
+    .check svg { width: 14px; height: 14px; }
+    @keyframes pop {
+      from { transform: scale(0.7); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .done-line { display: flex; align-items: center; margin-top: 10px; color: var(--green); font-weight: 650; }
+    .actions { justify-content: flex-start; margin-top: 12px; }
+    .primary {
+      background: var(--green);
+      color: white;
+    }
+    .primary:hover { background: #143728; }
+    .lost {
+      display: none;
+      margin-top: 16px;
+      color: var(--clay);
+      font-size: 14px;
+    }
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(12px);
+      max-width: min(440px, calc(100% - 32px));
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: #1c1916;
+      color: #f6f1e8;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 36px; }
+      .row { grid-template-columns: minmax(0, 1fr) auto; }
+      .row input { grid-column: 1 / -1; }
+      .composer-actions { align-items: stretch; }
+    }
+    footer {
+      margin: 36px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fill, .dot, .check { animation: none; transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Rekhta ebooks</p>
+    <h1>Rekhta Downloader</h1>
+    <p class="lede">Paste a book link. Pages are gathered into one PDF in the books folder. Add more while a book is already running — they wait their turn.</p>
+
+    <section class="composer" aria-label="Book links">
+      <div id="rows"></div>
+      <div class="composer-actions">
+        <button id="add" type="button">+ Add another</button>
+        <button id="all" type="button">Download all</button>
+      </div>
+    </section>
+
+    <div class="list-head">
+      <h2>Queue</h2>
+      <p id="summary"></p>
+    </div>
+    <div id="empty" class="empty">
+      <strong>Nothing waiting</strong>
+      Paste a link above and it will show up here.
+    </div>
+    <div id="jobs" aria-live="polite"></div>
+    <p id="lost" class="lost">The page lost the downloader. Start it again from the terminal, then refresh.</p>
+    <footer>Made by Abdullah Mushtaq</footer>
+  </main>
+  <div id="toast" role="status"></div>
+
+  <script>
+    const rows = document.getElementById("rows");
+    const jobsEl = document.getElementById("jobs");
+    const emptyEl = document.getElementById("empty");
+    const summaryEl = document.getElementById("summary");
+    const lostEl = document.getElementById("lost");
+    const toastEl = document.getElementById("toast");
+    const addButton = document.getElementById("add");
+    const allButton = document.getElementById("all");
+    let rowCount = 0;
+    let sending = false;
+    let toastTimer = 0;
+    let lastMarkup = "";
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function toast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 3200);
+    }
+
+    function addRow(value) {
+      if (rows.children.length >= 12) {
+        toast("Queue these first, then add more.");
+        return;
+      }
+      rowCount += 1;
+      const id = "url-" + rowCount;
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<label class="sr" for="' + id + '">Book link</label>' +
+        '<input id="' + id + '" type="url" placeholder="https://www.rekhta.org/ebooks/…" autocomplete="off" spellcheck="false">' +
+        '<button type="button" class="ghost" data-download>Download</button>' +
+        '<button type="button" class="icon" data-remove aria-label="Remove link">×</button>';
+      const input = row.querySelector("input");
+      input.value = value || "";
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          submit([input.value], [input]);
+        }
+      });
+      input.addEventListener("input", syncButtons);
+      row.querySelector("[data-download]").addEventListener("click", () => submit([input.value], [input]));
+      row.querySelector("[data-remove]").addEventListener("click", () => removeRow(row));
+      rows.appendChild(row);
+      syncButtons();
+      return input;
+    }
+
+    function removeRow(row) {
+      if (rows.children.length === 1) {
+        row.querySelector("input").value = "";
+        syncButtons();
+        return;
+      }
+      row.remove();
+      syncButtons();
+    }
+
+    function syncButtons() {
+      const inputs = [...rows.querySelectorAll("input")];
+      const any = inputs.some((input) => input.value.trim());
+      allButton.disabled = sending || !any;
+      addButton.disabled = sending || rows.children.length >= 12;
+      rows.querySelectorAll("[data-download]").forEach((button) => {
+        const input = button.parentElement.querySelector("input");
+        button.disabled = sending || !input.value.trim();
+      });
+    }
+
+    function collapseEmpty() {
+      const all = [...rows.querySelectorAll(".row")];
+      const filled = all.filter((row) => row.querySelector("input").value.trim());
+      if (filled.length === 0) {
+        all.slice(1).forEach((row) => row.remove());
+      }
+      if (!rows.children.length) addRow("");
+      syncButtons();
+    }
+
+    async function submit(urls, inputsToClear) {
+      const filled = urls.map((url) => url.trim()).filter(Boolean);
+      if (!filled.length) {
+        toast("Add a book link first.");
+        return;
+      }
+      sending = true;
+      syncButtons();
+      try {
+        const response = await fetch("/api/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          toast(data.error || "Could not add that link.");
+          return;
+        }
+        const rejectedUrls = new Set((data.rejected || []).map((item) => item.url.trim()));
+        if (data.added || data.duplicates) {
+          inputsToClear.forEach((input) => {
+            if (input.value.trim() && !rejectedUrls.has(input.value.trim())) input.value = "";
+          });
+          collapseEmpty();
+        }
+        const rejected = data.rejected || [];
+        if (data.added && !data.duplicates && !rejected.length) {
+          toast(data.added === 1 ? "Queued." : data.added + " books queued.");
+        } else if (!data.added && data.duplicates && !rejected.length) {
+          toast("Already in the queue.");
+        } else if (!data.added && rejected.length) {
+          toast(rejected[0].error);
+        } else if (data.added) {
+          const extra = data.duplicates ? " One was already waiting." : "";
+          const bad = rejected.length ? " A link still needs a fix." : "";
+          const count = data.added === 1 ? "Queued." : data.added + " books queued.";
+          toast(count + extra + bad);
+        }
+        if (data.jobs) render(data.jobs);
+      } catch (error) {
+        toast("The downloader is not answering. Leave the terminal window open.");
+      } finally {
+        sending = false;
+        syncButtons();
+      }
+    }
+
+    function percent(job) {
+      if (job.state === "done" || job.phase === "pdf" || job.phase === "cleanup") return 100;
+      if (!job.total) return 0;
+      return Math.max(0, Math.min(100, Math.round((job.done / job.total) * 100)));
+    }
+
+    function statusText(job) {
+      if (job.state === "queued") return "Waiting";
+      if (job.state === "error") return "";
+      if (job.phase === "opening") return "Opening the book";
+      if (job.phase === "counting") return "Counting pages";
+      if (job.phase === "pdf") return "Making the PDF";
+      if (job.phase === "cleanup") return "Tidying the page images";
+      if (job.state === "done") {
+        const size = job.size_label ? " · " + job.size_label : "";
+        return job.total + " pages · PDF ready" + size;
+      }
+      if (job.total) return job.done + " of " + job.total + " pages";
+      return "Starting";
+    }
+
+    function rank(state) {
+      return { running: 0, queued: 1, error: 2, done: 3 }[state] ?? 4;
+    }
+
+    let latestJobs = [];
+    let countdownTick = 0;
+    const localUntil = new Map();
+
+    function countdownLeft(job) {
+      const until = Number(job.retry_until) || 0;
+      if (until > 0) {
+        localUntil.delete(job.id);
+        const left = Math.ceil(until - Date.now() / 1000);
+        return left < -3 ? null : left;
+      }
+      if (!/slow down|hiccup|connection dropped/i.test(job.notice || "")) {
+        localUntil.delete(job.id);
+        return null;
+      }
+      if (!localUntil.has(job.id)) localUntil.set(job.id, Date.now() / 1000 + 60);
+      const left = Math.ceil(localUntil.get(job.id) - Date.now() / 1000);
+      if (left < -3) {
+        localUntil.delete(job.id);
+        return null;
+      }
+      return left;
+    }
+
+    function countdownHtml(left) {
+      if (left > 0) {
+        const unit = left === 1 ? "second" : "seconds";
+        return 'Retrying in <strong class="count">' + left + "</strong> " + unit + ". The download keeps going.";
+      }
+      return "Retrying now. The download keeps going.";
+    }
+
+    function armCountdown() {
+      const active = latestJobs.some((job) => countdownLeft(job) !== null);
+      if (active && !countdownTick) countdownTick = setInterval(() => render(latestJobs), 1000);
+      else if (!active && countdownTick) {
+        clearInterval(countdownTick);
+        countdownTick = 0;
+      }
+    }
+
+    function render(jobs) {
+      latestJobs = jobs;
+      armCountdown();
+      const ordered = jobs.slice().sort((a, b) => rank(a.state) - rank(b.state) || a.created - b.created);
+      const running = ordered.filter((job) => job.state === "running").length;
+      const waiting = ordered.filter((job) => job.state === "queued").length;
+      if (!ordered.length) summaryEl.textContent = "";
+      else if (running && waiting) summaryEl.textContent = "Downloading · " + waiting + " waiting";
+      else if (running) summaryEl.textContent = "Downloading";
+      else if (waiting) summaryEl.textContent = waiting + " waiting";
+      else summaryEl.textContent = "";
+
+      emptyEl.hidden = ordered.length > 0;
+      const markup = ordered.map((job) => {
+        const left = countdownLeft(job);
+        const counting = left !== null;
+        const calm = !counting && (job.mood === "calm" || /few seconds|good start/i.test(job.notice || ""));
+        const retrying = counting || (Boolean(job.notice) && !calm);
+        const pct = percent(job);
+        const showBar = job.state === "running";
+        const indeterminate = showBar && !job.total && job.phase !== "pdf" && job.phase !== "cleanup";
+        const bar = showBar
+          ? '<div class="track"><div class="fill' + (indeterminate ? " indeterminate" : "") + '" style="width:' + (indeterminate ? "" : pct + "%") + '"></div></div>'
+          : "";
+        const percentLabel = showBar && !indeterminate ? '<span class="percent">' + pct + '%</span>' : "";
+        const noticeBody = counting ? countdownHtml(left) : (job.notice ? escapeHtml(job.notice) : "");
+        const notice = noticeBody ? '<p class="notice' + (calm ? " calm" : "") + '">' + noticeBody + "</p>" : "";
+        const error = job.state === "error" ? '<p class="error-text">' + escapeHtml(job.error || "This download stopped.") + "</p>" : "";
+        const status = job.state === "done"
+          ? '<div class="done-line"><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 17 19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>' + escapeHtml(statusText(job)) + "</span></div>"
+          : (job.state === "error"
+            ? ""
+            : '<div class="status-row">' + (job.state === "running" ? '<span class="dot" aria-hidden="true"></span>' : "") + "<span>" + escapeHtml(statusText(job)) + "</span></div>");
+        const actions = job.state === "done"
+          ? '<div class="actions"><a class="button primary" href="' + escapeHtml(job.pdf_url) + '" target="_blank" rel="noopener">Open PDF</a><button type="button" class="ghost" data-reveal="' + escapeHtml(job.id) + '">Show in folder</button></div>'
+          : "";
+        return '<article class="job ' + escapeHtml(job.state) + (retrying ? " retrying" : "") + '">' +
+          '<div class="job-top"><h3 class="name">' + escapeHtml(job.name) + "</h3>" + percentLabel + "</div>" +
+          '<p class="url">' + escapeHtml(job.url) + "</p>" +
+          bar + status + notice + error + actions +
+          "</article>";
+      }).join("");
+      if (markup === lastMarkup) return;
+      lastMarkup = markup;
+      jobsEl.innerHTML = markup;
+
+      jobsEl.querySelectorAll("[data-reveal]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          try {
+            const response = await fetch("/api/reveal", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: button.getAttribute("data-reveal") })
+            });
+            const data = await response.json();
+            if (!response.ok) toast(data.error || "Could not open the folder.");
+          } catch (error) {
+            toast("Could not open the folder.");
+          }
+        });
+      });
+    }
+
+    async function refresh() {
+      try {
+        const response = await fetch("/api/jobs");
+        if (!response.ok) throw new Error("status");
+        const data = await response.json();
+        render(data.jobs || []);
+        lostEl.style.display = "none";
+      } catch (error) {
+        lostEl.style.display = "block";
+      }
+    }
+
+    addButton.addEventListener("click", () => {
+      const input = addRow("");
+      if (input) input.focus();
+    });
+    allButton.addEventListener("click", () => {
+      const inputs = [...rows.querySelectorAll("input")];
+      submit(inputs.map((input) => input.value), inputs);
+    });
+
+    addRow("");
+    rows.querySelector("input").focus();
+    refresh();
+    setInterval(refresh, 800);
+  </script>
+</body>
+</html>
